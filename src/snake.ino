@@ -1,4 +1,3 @@
-// #pragma ONCE
 #ifndef SNAKE_GAME
 #define SNAKE_GAME  
 
@@ -10,27 +9,7 @@
 #define OLED_RESET A0
 Adafruit_SSD1306 display(OLED_DC, OLED_RESET, OLED_CS);
 
-struct snake 
-{
-    int x;
-    int y;
-};
-struct snake snakeObj[50]; // 30 objs
-struct snake food; 
-
-bool stateSwitch = false;
-bool isGameOver = false;
-
-int len = 4;
-int xButton = 1; // always move right
-int yButton = 0;
-
-const size_t lim = 5; // max high scores displayed
-int scoreList[lim] = {0, 1, 2, 3, 4}; 
-
-
-void defaultMenu();
-void menu();
+void Menu_and_Preset();
 void newGame();
 void endGame();
 void highScore();
@@ -38,6 +17,29 @@ void moveUp();
 void moveDown();
 void moveLeft();
 void moveRight();
+
+struct snake 
+{
+    int x;
+    int y;
+};
+struct snake snakeObj[100] = {0};
+struct snake food; 
+
+bool isSwitched = false;
+bool isGameOver = false;
+bool isHighScore = true;
+
+int len = 4;
+int personScore = 0;
+
+const size_t size = 5; // max high scores displayed 
+int scoreList[size] = {0}; 
+
+int xButton = 1; // move right initially
+int yButton = 0;
+
+
 
 void setup()
 {
@@ -52,186 +54,174 @@ void setup()
     attachInterrupt(D7, moveRight, RISING, 3);
 
     display.begin(SSD1306_SWITCHCAPVCC);
-    display.clearDisplay();
-    
-    snakeObj[0].x = 5;
-    snakeObj[0].y = 5;
-    
-/*     snakeObj[1].x = 6;
-    snakeObj[1].y = 5;
-    
-    snakeObj[2].x = 7;
-    snakeObj[2].y = 5;
-    
-    snakeObj[3].x = 8;
-    snakeObj[3].y = 5;
-    
-    snakeObj[4].x = 9;
-    snakeObj[4].y = 5;
- */
-    food.x = rand() % 32; // width = 0 -> 31
-    food.y = rand() % 16; // height = 0 -> 15
 }
 
 void loop()
 {
-    if (stateSwitch == 0)
+    if (!isSwitched)
     {
-        stateSwitch = 0;
-        
-        defaultMenu();
-        display.setCursor(0, 32);
-        display.println("NEWGAMEWBELOW");
-        
+        Menu_and_Preset();
+        display.println("   New Game");
+
         if (digitalRead(D7) == HIGH)
         {
             display.clearDisplay();
             do
             {
                 newGame();
-                delay(300);
+                delay(150);
             } while (!isGameOver); // is not over
         }
     }
 
-    if (digitalRead(D5) == HIGH || stateSwitch == 1) // if press down
+    if (digitalRead(D5) == HIGH || isSwitched) // if press down
     {
-        stateSwitch = 1;
-        
-        defaultMenu();
-        display.setCursor(0, 32);
-        display.println("HIGHSCORESBELOW");
+        isSwitched = 1;
+
+        Menu_and_Preset();
+        display.println("   High Score");
         
         if (digitalRead(D7) == HIGH)
-        { 
+        {
             do
             {
                 highScore();
-            } while (digitalRead(D6) != HIGH);
+            } while (isHighScore);
         }
 
         if (digitalRead(D3) == HIGH)
-        { // if press up
-            stateSwitch = 0;
+        {   // if press Up
+            isSwitched = !isSwitched;
         }
     }
     display.display();
-    delay(500);
+    delay(200);
 }
 
-// TODO: 3 states (menu, game, high score);
-void defaultMenu()
-{    
+void Menu_and_Preset()
+{
+    snakeObj[100] = {0};
+    snakeObj[0].x = (rand() % 32) + 1;
+    snakeObj[0].y = (rand() % 16) + 1;
+    food.x = rand() % 32; // width = 0 -> 31
+    food.y = rand() % 16; // height = 0 -> 15
+
+    // for next game
+    len = 4;    
+    personScore = 0;
+    isGameOver = false; 
+    isHighScore = true;
+
+    // GUI
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.setCursor(0, 0);
     display.println("Snake Game!");
-
-    display.println("          New");
-    display.println("          High");
-
-    // display.setCursor(0, 32);
-    // display.println("NEWBELOW");
-    // display.display();
     
+    display.setCursor(0, 48); // near bottom screen
+    display.println("Right to Select");
+    display.println("Up/Down to Change");
+    display.setCursor(0, 16);
 }    
 
-void menu()
-{   
-}
-
-int totScore = 0;
 void newGame()
 {
     display.fillRect(food.x * 4, food.y * 4, 4, 4, true); 
 
     for (int i = len; i > 0; --i)
-    {
-        // 1 update per loop
-        snakeObj[i].x = snakeObj[i - 1].x; // [2] = [1] -> [1] = [0]
+    {   // 1 update per loop
+        snakeObj[i].x = snakeObj[i - 1].x;
         snakeObj[i].y = snakeObj[i - 1].y;
-        // drawRect(x, y, width, height, color); x y indicate the rec's top left corner
-        // * 4 = full screen
         display.fillRect(snakeObj[i].x * 4, snakeObj[i].y * 4, 4, 4, true); 
     }
 
-    snakeObj[0].x += xButton; // head
+    snakeObj[0].x += xButton; // snake's head
     snakeObj[0].y += yButton;
     
-    // check over-border length
+    // check over-border length-wise
     if (snakeObj[0].x == -1)
         snakeObj[0].x = 31;
     else if (snakeObj[0].x == 32)
         snakeObj[0].x = 0;
 
-    // check over-border height
+    // check over-border height-wise
     if (snakeObj[0].y == -1)
         snakeObj[0].y = 15;
     else if (snakeObj[0].y == 16)
         snakeObj[0].y = 0;
     
-    // TODO: logic???
     if ((snakeObj[0].x != food.x) || (snakeObj[0].y != food.y))
     {   // if not eating
-        display.fillRect(snakeObj[len].x * 4, snakeObj[len].y * 4, 4, 4, false); // false = remove last obj
+        display.fillRect(snakeObj[len].x * 4, snakeObj[len].y * 4, 4, 4, false); // false = remove last obj/pxl
     }
-    else // else increase len + new food
+    else // else ++len + new food
     {
-        ++totScore;
-        len += 10; // TODO:
+        ++personScore;
+        len += 1;
         food.x = rand() % 32;
         food.y = rand() % 16;
     }
+    display.fillRect(snakeObj[0].x * 4, snakeObj[0].y * 4, 4, 4, true);
+    display.display();
 
     // self-collision
-    for (int idx = 4; idx <= len; ++idx)
+    for (int idx = 4; idx <= len; ++idx) // minimum 3 steps to self-collide
     {
         if ((snakeObj[0].x == snakeObj[idx].x) && (snakeObj[0].y == snakeObj[idx].y))
         {
             isGameOver = true;
-            endGame(totScore);
+            endGame(personScore);
         }
     }    
-
-    display.fillRect(snakeObj[0].x * 4, snakeObj[0].y * 4, 4, 4, true);
-    display.display();
 }
 
-void endGame(int totScoreIn) {
-    for (int i = lim - 1; i >= 0; i--)
+void endGame(int scoreIn) {
+    for (int i = size - 1; i >= 0; i--)
     {
-        if (totScoreIn > scoreList[i])
+        if (scoreIn > scoreList[i])
         {
-            scoreList[i] = totScoreIn;
+            scoreList[i] = scoreIn;
             break;
         }
     }
 
-    while (digitalRead(D3) != HIGH) {
+    while (digitalRead(D7) != HIGH) {
+        // GUI
         display.clearDisplay();
-        display.setTextSize(2);
+        display.setTextSize(1);
         display.setTextColor(WHITE);
+        
         display.setCursor(0, 0);
         display.print("Score: ");
-        display.println(totScoreIn, DEC); // same line
-        display.setTextSize(1);
-        display.println("Press any key to go back to Menu");
+        display.println(scoreIn, DEC); // same line
+        
+        display.setCursor(0, 56); // near bottom screen
+        display.println("Right to Menu");
         display.display();
     }
 }
 
 void highScore() {
+    if (digitalRead(D6) == HIGH) // if Left, return to menu
+    {
+        isHighScore = 0;
+    }
+
+    // GUI
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.setCursor(0, 0);
 
-    for (int i = lim - 1; i >= 0; i--) {
+    for (int i = size - 1; i >= 0; i--) {
         display.println(scoreList[i], DEC);
     }
     
+    display.setCursor(0, 56); // near bottom screen
+    display.println("Left to Menu");
     display.display();
+
 }
 
 void moveUp()
@@ -261,77 +251,4 @@ void moveLeft()
         xButton = -1;
     yButton = 0;
 }
-
-/* void testdrawchar(void)
-{
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 0);
-
-  for (uint8_t i = 0; i < 168; i++)
-  {
-    if (i == '\n')
-      continue;
-    display.write(i);
-    if ((i > 0) && (i % 21 == 0))
-      display.println();
-  }
-  display.display();
-} */
-
-/* void testscrolltext(void)
-{
-  display.setTextSize(2);
-  display.setTextColor(WHITE);
-  display.setCursor(10, 0);
-  display.clearDisplay();
-  display.println("scroll");
-  display.display();
-
-  display.startscrollright(0x00, 0x0F);
-  delay(2000);
-  display.stopscroll();
-  delay(1000);
-  display.startscrollleft(0x00, 0x0F);
-  delay(2000);
-  display.stopscroll();
-  delay(1000);
-  display.startscrolldiagright(0x00, 0x07);
-  delay(2000);
-  display.startscrolldiagleft(0x00, 0x07);
-  delay(2000);
-  display.stopscroll();
-} */
-
-
-/*     display.setTextSize(1);
-    display.setTextColor(WHITE);
-
-    display.setCursor(0, 0);
-    display.println("Hello, world!");
-    
-    // for Selection
-    display.setTextColor(BLACK, WHITE); // 'inverted' text
-    display.println(3.141592);
-    
-    display.setTextSize(2);
-    display.setTextColor(WHITE);
-    display.print("0x");
-    display.println(0xDEADBEEF, HEX);
-    display.display();
-    delay(2000);
-    display.clearDisplay();
-
-    draw the first ~12 characters in the font
-    testdrawchar();
-    display.display();
-    delay(2000);
-    display.clearDisplay();
-
-    draw scrolling text
-    testscrolltext();
-    delay(2000);
-    display.clearDisplay();
- */
-
 #endif // SNAKE_GAME

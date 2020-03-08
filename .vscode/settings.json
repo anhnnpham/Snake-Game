@@ -9,7 +9,9 @@
         "ostream": "cpp",
         "sstream": "cpp",
         "utility": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "array": "cpp",
+        "initializer_list": "cpp"
     },
     "particle.targetDevice": ""
 }
