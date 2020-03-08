@@ -75,17 +75,13 @@ void setup()
 
 void loop()
 {
-                newGame();
-                delay(300);
-
-/*     if (stateSwitch == 0)
+    if (stateSwitch == 0)
     {
-        // stateSwitch = 0;
+        stateSwitch = 0;
         
         defaultMenu();
         display.setCursor(0, 32);
         display.println("NEWGAMEWBELOW");
-        display.display();
         
         if (digitalRead(D7) == HIGH)
         {
@@ -93,7 +89,7 @@ void loop()
             do
             {
                 newGame();
-                delay(500);
+                delay(300);
             } while (!isGameOver); // is not over
         }
     }
@@ -105,7 +101,6 @@ void loop()
         defaultMenu();
         display.setCursor(0, 32);
         display.println("HIGHSCORESBELOW");
-        display.display();
         
         if (digitalRead(D7) == HIGH)
         { 
@@ -116,20 +111,13 @@ void loop()
         }
 
         if (digitalRead(D3) == HIGH)
-        { // if press up again
+        { // if press up
             stateSwitch = 0;
         }
     }
-
-    // display.display();
+    display.display();
     delay(500);
-    // if(state == 1 && select == 1 )
-
-    //     if(state == 1)
-    //     menu();
-    // else if(state == 2)
-    //     game();
- */}
+}
 
 // TODO: 3 states (menu, game, high score);
 void defaultMenu()
@@ -201,8 +189,8 @@ void newGame()
     {
         if ((snakeObj[0].x == snakeObj[idx].x) && (snakeObj[0].y == snakeObj[idx].y))
         {
-            endGame(totScore);
             isGameOver = true;
+            endGame(totScore);
         }
     }    
 
@@ -217,23 +205,20 @@ void endGame(int totScoreIn) {
         {
             scoreList[i] = totScoreIn;
             break;
-        }   
+        }
     }
 
-    while (1)
-    {
-    display.clearDisplay();
-    display.setTextSize(2);
-    display.setTextColor(WHITE);
-    display.setCursor(0, 0);
-    display.print("Score: ");
-    display.println(totScoreIn, DEC); // same line
-    // display.println(totScoreIn);
-    display.display();
-    delay(5000); // before return to menu
-
+    while (digitalRead(D3) != HIGH) {
+        display.clearDisplay();
+        display.setTextSize(2);
+        display.setTextColor(WHITE);
+        display.setCursor(0, 0);
+        display.print("Score: ");
+        display.println(totScoreIn, DEC); // same line
+        display.setTextSize(1);
+        display.println("Press any key to go back to Menu");
+        display.display();
     }
-    
 }
 
 void highScore() {
@@ -245,6 +230,7 @@ void highScore() {
     for (int i = lim - 1; i >= 0; i--) {
         display.println(scoreList[i], DEC);
     }
+    
     display.display();
 }
 
