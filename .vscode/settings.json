@@ -1,0 +1,15 @@
+{
+    "extensions.ignoreRecommendations": true,
+    "C_Cpp.default.configurationProvider": "particle.particle-vscode-core",
+    "cortex-debug.openocdPath": "${command:particle.getDebuggerOpenocdPath}",
+    "files.associations": {
+        "*.ino": "cpp",
+        "*.tcc": "cpp",
+        "string": "cpp",
+        "ostream": "cpp",
+        "sstream": "cpp",
+        "utility": "cpp",
+        "string_view": "cpp"
+    },
+    "particle.targetDevice": ""
+}
