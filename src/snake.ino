@@ -1,3 +1,7 @@
+// #pragma ONCE
+#ifndef SNAKE_GAME
+#define SNAKE_GAME  
+
 #include "Adafruit_SSD1306/Adafruit_SSD1306.h"
 
 // SDA = MOSI
@@ -6,19 +10,19 @@
 #define OLED_RESET A0
 Adafruit_SSD1306 display(OLED_DC, OLED_RESET, OLED_CS);
 
-struct snake // nice
+struct snake 
 {
     int x;
     int y;
 };
-struct snake snakeObj[30]; // 30 objs
+struct snake snakeObj[50]; // 30 objs
 struct snake food; 
 
-bool stateSwitch = 0;
-bool isGameOver = 0;
+bool stateSwitch = false;
+bool isGameOver = false;
 
-int snakeLen = 2;
-int xButton = 1; // always move horizontally
+int len = 4;
+int xButton = 1; // always move right
 int yButton = 0;
 
 const size_t lim = 5; // max high scores displayed
@@ -48,25 +52,35 @@ void setup()
     attachInterrupt(D7, moveRight, RISING, 3);
 
     display.begin(SSD1306_SWITCHCAPVCC);
-    // display.clearDisplay();
+    display.clearDisplay();
     
     snakeObj[0].x = 5;
     snakeObj[0].y = 5;
-    snakeObj[1].x = 6;
+    
+/*     snakeObj[1].x = 6;
     snakeObj[1].y = 5;
+    
     snakeObj[2].x = 7;
     snakeObj[2].y = 5;
-
+    
+    snakeObj[3].x = 8;
+    snakeObj[3].y = 5;
+    
+    snakeObj[4].x = 9;
+    snakeObj[4].y = 5;
+ */
     food.x = rand() % 32; // width = 0 -> 31
     food.y = rand() % 16; // height = 0 -> 15
 }
 
 void loop()
 {
+                newGame();
+                delay(300);
 
-    if (stateSwitch == 0)
+/*     if (stateSwitch == 0)
     {
-        stateSwitch = 0;
+        // stateSwitch = 0;
         
         defaultMenu();
         display.setCursor(0, 32);
@@ -115,9 +129,9 @@ void loop()
     //     menu();
     // else if(state == 2)
     //     game();
-}
+ */}
 
-// TODO: new game & high score; 3 states (menu, game, high score); check button press w if()
+// TODO: 3 states (menu, game, high score);
 void defaultMenu()
 {    
     display.clearDisplay();
@@ -139,23 +153,24 @@ void menu()
 {   
 }
 
+int totScore = 0;
 void newGame()
 {
     display.fillRect(food.x * 4, food.y * 4, 4, 4, true); 
 
-    for (int i = snakeLen; i > 0; i--) // logic?
+    for (int i = len; i > 0; --i)
     {
-        snakeObj[i].x = snakeObj[i - 1].x;
+        // 1 update per loop
+        snakeObj[i].x = snakeObj[i - 1].x; // [2] = [1] -> [1] = [0]
         snakeObj[i].y = snakeObj[i - 1].y;
         // drawRect(x, y, width, height, color); x y indicate the rec's top left corner
         // * 4 = full screen
-        // display.fillRect(snakeObj[i].x * 4, snakeObj[i].y * 4, 4, 4, true);
-        display.fillRect(snakeObj[i].x * 4, snakeObj[i].y * 4, 4, 4, true);
-    }    
-    
-    snakeObj[0].x += xButton; // [0] = head
-    snakeObj[0].y += yButton; 
+        display.fillRect(snakeObj[i].x * 4, snakeObj[i].y * 4, 4, 4, true); 
+    }
 
+    snakeObj[0].x += xButton; // head
+    snakeObj[0].y += yButton;
+    
     // check over-border length
     if (snakeObj[0].x == -1)
         snakeObj[0].x = 31;
@@ -168,30 +183,32 @@ void newGame()
     else if (snakeObj[0].y == 16)
         snakeObj[0].y = 0;
     
-    int totScore = 0;
-    if ((snakeObj[0].x != food.x) || (snakeObj[0].y != food.y)) // if not eating
-        // display.fillRect(snakeObj[snakeLen].x * 4, snakeObj[snakeLen].y * 4, 4, 4, false);
-        display.fillRect(snakeObj[snakeLen].x * 4, snakeObj[snakeLen].y * 4, 4, 4, false);
+    // TODO: logic???
+    if ((snakeObj[0].x != food.x) || (snakeObj[0].y != food.y))
+    {   // if not eating
+        display.fillRect(snakeObj[len].x * 4, snakeObj[len].y * 4, 4, 4, false); // false = remove last obj
+    }
     else // else increase len + new food
     {
         ++totScore;
-        snakeLen += 10; // TODO:
+        len += 10; // TODO:
         food.x = rand() % 32;
         food.y = rand() % 16;
     }
 
+    // self-collision
+    for (int idx = 4; idx <= len; ++idx)
+    {
+        if ((snakeObj[0].x == snakeObj[idx].x) && (snakeObj[0].y == snakeObj[idx].y))
+        {
+            endGame(totScore);
+            isGameOver = true;
+        }
+    }    
 
     display.fillRect(snakeObj[0].x * 4, snakeObj[0].y * 4, 4, 4, true);
     display.display();
-
-    // TODO: self-collision with isOver = 1;    
-    // if (/* condition */)
-    // {
-    //     isGameOver = true;
-    //     endGame(totScore);   
-    // }
 }
-
 
 void endGame(int totScoreIn) {
     for (int i = lim - 1; i >= 0; i--)
@@ -200,9 +217,11 @@ void endGame(int totScoreIn) {
         {
             scoreList[i] = totScoreIn;
             break;
-        }
+        }   
     }
 
+    while (1)
+    {
     display.clearDisplay();
     display.setTextSize(2);
     display.setTextColor(WHITE);
@@ -212,6 +231,9 @@ void endGame(int totScoreIn) {
     // display.println(totScoreIn);
     display.display();
     delay(5000); // before return to menu
+
+    }
+    
 }
 
 void highScore() {
@@ -325,3 +347,5 @@ void moveLeft()
     delay(2000);
     display.clearDisplay();
  */
+
+#endif // SNAKE_GAME
